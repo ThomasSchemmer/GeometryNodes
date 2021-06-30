@@ -13,6 +13,7 @@ public abstract class Node
     public Type type;
     public bool isExecuted;
     public Result result;
+    public bool isHovered;
 
     protected bool isDragged;
 
@@ -49,24 +50,52 @@ public abstract class Node
     }
 
     public bool ProcessEvents(Event e) {
+        isHovered = NodeEditorWindow.GetOffset(original).Contains(e.mousePosition);
+
         switch (e.type) {
             case EventType.MouseDown:
-                HandleStartDrag(e); break;
+                return 
+                    ProcessNodeInputEvents(e) ||
+                    HandleStartDrag(e); 
             case EventType.MouseUp:
-                isDragged = false; break;
+                isDragged = false;
+                return ProcessClose(e);
             case EventType.MouseDrag:
                 return HandleDrag(e); 
         }
         return false;
     }
 
-    private void HandleStartDrag(Event e) {
+    private bool ProcessClose(Event e) {
+        Rect temp = NodeEditorWindow.GetOffset(original);
+        Rect iRect = new Rect(temp.x + temp.width - 25, temp.y + 4, 20, 20);
+        if (iRect.Contains(e.mousePosition)) {
+            NodeEditorWindow.MarkNodeToDelete(this);
+            return true;
+        }
+        return false;
+    }
+
+    private bool ProcessNodeInputEvents(Event e) {
+        foreach(NodeInput input in inputs) {
+            if (input.ProcessEvent(e))
+                return true;
+        }
+        foreach(NodeInput output in outputs) {
+            if (output.ProcessEvent(e))
+                return true;
+        }
+        return false;
+    }
+
+    private bool HandleStartDrag(Event e) {
         if (e.button != 0)
-            return;
+            return false;
         if (NodeEditorWindow.GetOffset(original).Contains(e.mousePosition)) {
             isDragged = true;
+            return true;
         }
-        GUI.changed = true;
+        return false;
     }
 
 
@@ -77,6 +106,15 @@ public abstract class Node
         e.Use();
         return true;
 
+    }
+
+    public virtual void Delete() {
+        foreach (NodeInput input in this.inputs) {
+            NodeEditorWindow.removeConnectionPoint(input);
+        }
+        foreach (NodeInput output in this.outputs) {
+            NodeEditorWindow.removeConnectionPoint(output);
+        }
     }
 
     public abstract bool Execute(out List<Node> enables);

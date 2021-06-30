@@ -9,9 +9,11 @@ public class NodeEditorWindow : EditorWindow {
     public static Vector2 offset, oldOffset;
     public static int lastMouseButton = -1;
 
-    public static Action<NodeInput> onClickConnectionPoint;
+    public static Action<NodeInput, bool> onClickConnectionPoint;
+    public static Action<NodeInput> removeConnectionPoint;
 
     public List<Node> nodes;
+    private List<Node> toDeleteNodes;
 
     private string path = "\\NodeEditor\\nodes.sav";
     private List<NodeConnection> connections;
@@ -31,6 +33,8 @@ public class NodeEditorWindow : EditorWindow {
         offset = new Vector2(0, 0);
         oldOffset = new Vector2(0, 0);
         onClickConnectionPoint = OnClickOnInput;
+        removeConnectionPoint = OnClickRemoveNodeConnections;
+        toDeleteNodes = new List<Node>();
         Styles.Init();
         if (nodes == null)
             nodes = new List<Node>();
@@ -78,51 +82,58 @@ public class NodeEditorWindow : EditorWindow {
         if (nodes == null)
             return;
         foreach(Node node in nodes) {
-            if (node.ProcessEvents(e))
+            if (node.ProcessEvents(e)) {
                 GUI.changed = true;
+                e.Use();
+                return;
+            }
         }
     }
 
     private void ProcessEvents(Event e) {
         switch (e.type) {
             case EventType.MouseDown:
-                HandleRightClick(e);
+                if (HandleRightClick(e)) {
+                    e.Use();
+                    return;
+                }
                 break;
         }
         HandleView(e);
     }
 
-    private void HandleRightClick(Event e) {
+    private bool HandleRightClick(Event e) {
         if (e.button != 1)
-            return;
+            return false;
         if (currentConnection != null) {
             currentConnection = null;
             selectedInput = null;
-            return;
+            return true;
         }
-        HandleContextMenu(e);
+        return HandleContextMenu(e);
     }
 
-    private void HandleView(Event e) {
+    private bool HandleView(Event e) {
         if (e.button != 2)
-            return;
+            return false;
         switch (e.type) {
             case EventType.MouseDown:
                 dragStart = e.mousePosition;
-                break;
+                return true;
             case EventType.MouseDrag:
                 offset = dragStart - e.mousePosition + oldOffset;
-                break;
+                return true;
             case EventType.MouseUp:
                 oldOffset = offset;
-                break;
+                return true;
 
         }
+        return false;
     }
 
 
 
-    private void HandleContextMenu(Event e) {
+    private bool HandleContextMenu(Event e) {
         GenericMenu genMenu = new GenericMenu();
         genMenu.AddItem(new GUIContent("Add GeometryNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.GEOMETRY));
         genMenu.AddItem(new GUIContent("Add OutputNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.OUTPUT));
@@ -130,6 +141,7 @@ public class NodeEditorWindow : EditorWindow {
         genMenu.AddItem(new GUIContent("Add MaterialNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.MATERIAL));
 
         genMenu.ShowAsContext();
+        return true;
     }
 
     private void OnClickAddNode(Vector2 mousePosition, Node.Type type) {
@@ -154,17 +166,20 @@ public class NodeEditorWindow : EditorWindow {
         OutputNode.StartExecution();
     }
 
-    private void OnClickRemoveNodeConnection(NodeConnection connection) {
-        if (connection.input != null)
-            connection.input.connection = null;
-        if (connection.output != null)
-            connection.output.connection = null;
-        connections.Remove(connection);
+    private void OnClickRemoveNodeConnections(NodeInput input) {
+        foreach (NodeConnection connection in input.connections) {
+            if (connection.input != null && !connection.input.Equals(input))
+                connection.input.connections.Remove(connection);
+            if (connection.output != null && !connection.output.Equals(input))
+                connection.output.connections.Remove(connection);
+            connections.Remove(connection);
+        }
+        input.connections = new List<NodeConnection>();
     }
 
-    private void OnClickOnInput(NodeInput input) {
-        if (lastMouseButton == 1) {
-            OnClickRemoveNodeConnection(input.connection);
+    private void OnClickOnInput(NodeInput input, bool isRightclick) {
+        if (isRightclick) {
+            OnClickRemoveNodeConnections(input);
             return;
         }
         
@@ -173,8 +188,7 @@ public class NodeEditorWindow : EditorWindow {
             selectedInput = input;
             currentConnection = new NodeConnection(
                 input.type == NodeInput.InputType.In ? input : null,
-                input.type == NodeInput.InputType.In ? null : input,
-                OnClickRemoveNodeConnection
+                input.type == NodeInput.InputType.In ? null : input
                 );
             return;
         }
@@ -187,18 +201,18 @@ public class NodeEditorWindow : EditorWindow {
         //check for double connections on the same input/output
         //prohibit linking input with input
         if (input.type == NodeInput.InputType.In ) {
-            if (currentConnection.input != null || input.connection != null)
+            if (currentConnection.input != null || input.connections.Count > 0)
                 return;
             currentConnection.input = input;
-            input.connection = currentConnection;
-            currentConnection.output.connection = currentConnection;
+            input.connections.Add(currentConnection);
+            currentConnection.output.connections.Add(currentConnection);
 
         } else {
-            if (currentConnection.output != null || input.connection != null)
+            if (currentConnection.output != null)
                 return;
             currentConnection.output = input;
-            input.connection = currentConnection;
-            currentConnection.input.connection = currentConnection;
+            input.connections.Add(currentConnection);
+            currentConnection.input.connections.Add(currentConnection);
         }
             
 
@@ -262,12 +276,11 @@ public class NodeEditorWindow : EditorWindow {
 
     private void Update() {
         Repaint();
-        if (Input.GetMouseButtonDown(0))
-            lastMouseButton = 0;
-        if (Input.GetMouseButtonDown(1))
-            lastMouseButton = 1;
-        if (Input.GetMouseButtonDown(2))
-            lastMouseButton = 2;
+        foreach(Node node in toDeleteNodes) {
+            node.Delete();
+            nodes.Remove(node);
+        }
+        toDeleteNodes = new List<Node>();
     }
 
     public static Rect GetOffset(Rect original) {
@@ -275,6 +288,12 @@ public class NodeEditorWindow : EditorWindow {
             original.y - offset.y,
             original.width,
             original.height);
+    }
+
+    public static void MarkNodeToDelete(Node node) {
+        if (instance == null)
+            return;
+        instance.toDeleteNodes.Add(node);
     }
 
 }

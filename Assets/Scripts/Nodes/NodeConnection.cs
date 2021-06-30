@@ -7,12 +7,10 @@ using UnityEditor;
 public class NodeConnection 
 {
     public NodeInput input, output;
-    public Action<NodeConnection> OnClickRemoveConnection;
 
-    public NodeConnection(NodeInput input, NodeInput output, Action<NodeConnection> OnClickRemoveConnection) {
+    public NodeConnection(NodeInput input, NodeInput output) {
         this.input = input;
         this.output = output;
-        this.OnClickRemoveConnection = OnClickRemoveConnection;
     }
 
     public void Draw() {

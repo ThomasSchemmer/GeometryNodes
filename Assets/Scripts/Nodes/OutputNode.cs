@@ -48,6 +48,9 @@ public class OutputNode : Node {
         GUI.Box(rect, title, Styles.boxStyle);
         rect.height = 30;
         GUI.Label(rect, "" + Enum.GetName(typeof(Type), type), Styles.boxStyle);
+        Rect iRect = new Rect(rect.x + rect.width - 25, rect.y + 4, 20, 20);
+        if (isHovered)
+            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
         rect.y += 30;
         rect.x += 50;
         rect.width -= 100;
@@ -60,8 +63,13 @@ public class OutputNode : Node {
 
     public override bool Execute(out List<Node> enables) {
         enables = new List<Node>();
-        if (!inputs[0].TryGetOtherNode(out Node other) ||
-            !other.isExecuted)
+        if (!inputs[0].TryGetOtherNodes(out List<Node> others))
+            return false;
+        bool othersExec = true;
+        foreach(Node other in others) {
+            othersExec &= other.isExecuted;
+        }
+        if (!othersExec)
             return false;
         if (isExecuted)
             return true;
@@ -72,7 +80,7 @@ public class OutputNode : Node {
             root = new GameObject("Output");
             root.transform.parent = ne.transform;
         }
-        Result result = other.result;
+        Result result = others[0].result;
         if (!(result is Geometry))
             return false;
         Geometry geometry = (Geometry)result;
@@ -97,6 +105,12 @@ public class OutputNode : Node {
         filter.mesh = mesh;
         isExecuted = true;
         return true;
+    }
+
+    public override void Delete() {
+        base.Delete();
+        if (instance == this)
+            instance = null;
     }
 
     public static bool IsAllowed() {

@@ -22,6 +22,9 @@ public class MaterialNode : Node {
         GUI.Box(rect, "", Styles.boxStyle);
         rect.height = 30;
         GUI.Label(rect, "" + Enum.GetName(typeof(Type), type), Styles.boxStyle);
+        Rect iRect = new Rect(rect.x + rect.width - 25, rect.y + 4, 20, 20);
+        if (isHovered)
+            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
         rect.height = 20;
 
         rect.y += 35;
@@ -37,13 +40,18 @@ public class MaterialNode : Node {
 
     public override bool Execute(out List<Node> enables) {
         enables = new List<Node>();
-        if (!inputs[0].TryGetOtherNode(out Node other) ||
-            !other.isExecuted)
+        if (!inputs[0].TryGetOtherNodes(out List<Node> others))
+            return false;
+        bool othersExec = true;
+        foreach (Node other in others) {
+            othersExec &= other.isExecuted;
+        }
+        if (!othersExec)
             return false;
         if (isExecuted)
             return true;
 
-        Result result = other.result;
+        Result result = others[0].result;
         if (!(result is Geometry))
             return false;
 
@@ -54,8 +62,9 @@ public class MaterialNode : Node {
 
         enables = new List<Node>();
         foreach (NodeInput output in outputs) {
-            if (output.TryGetOtherNode(out Node node))
-                enables.Add(node);
+            if (output.TryGetOtherNodes(out List<Node> nodes)) {
+                enables.AddRange(nodes);
+            }
         }
         isExecuted = true;
         return true;

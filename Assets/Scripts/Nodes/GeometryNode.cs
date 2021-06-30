@@ -27,8 +27,9 @@ public class GeometryNode : Node {
         }
         enables = new List<Node>();
         foreach(NodeInput output in outputs) {
-            if (output.TryGetOtherNode(out Node node))
-                enables.Add(node);
+            if (output.TryGetOtherNodes(out List<Node> nodes)) {
+                enables.AddRange(nodes);
+            }
         }
         isExecuted = true;
         return true;
@@ -52,6 +53,9 @@ public class GeometryNode : Node {
         GUI.Box(rect, "", Styles.boxStyle);
         rect.height = 30;
         GUI.Label(rect, "" + Enum.GetName(typeof(Type), type), Styles.boxStyle);
+        Rect iRect = new Rect(rect.x + rect.width - 25, rect.y + 4, 20, 20);
+        if(isHovered)
+            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
 
         rect.height = 20;
         rect.y += 23;

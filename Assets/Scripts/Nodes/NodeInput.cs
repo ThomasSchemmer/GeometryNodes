@@ -7,7 +7,7 @@ public class NodeInput {
     public enum InputType { In, Out }
 
     public Node parent;
-    public NodeConnection connection;
+    public List<NodeConnection> connections;
     public GUIStyle style;
     public Rect rect, original;
     public InputType type;
@@ -26,13 +26,31 @@ public class NodeInput {
                 original.x = parent.rect.x + parent.rect.width - 8f;
                 break;
         }
+        connections = new List<NodeConnection>();
     }
 
     public void Draw(int i, int max) {
         rect = GetPosition(i, max);
-        if (GUI.Button(rect, "", style)) {
-            NodeEditorWindow.onClickConnectionPoint(this);
+        GUI.Box(rect, "", style);
+    }
+
+    public bool ProcessEvent(Event e) {
+        if (e.type != EventType.MouseDown)
+            return false;
+        if (!rect.Contains(e.mousePosition))
+            return false;
+
+        if(e.button == 0) {
+            NodeEditorWindow.onClickConnectionPoint(this, false);
+            e.Use();
+            return true;
         }
+        if(e.button == 1) {
+            NodeEditorWindow.onClickConnectionPoint(this, true);
+            e.Use();
+            return true;
+        }
+        return false;
     }
 
     public Rect GetPosition(int i, int max) {
@@ -56,16 +74,21 @@ public class NodeInput {
         return GetPosition(i, max);
     }
 
-    public bool TryGetOtherNode(out Node other) {
-        other = null;
-        if (connection == null)
+    public bool TryGetOtherNodes(out List<Node> others) {
+        others = null;
+        if (connections.Count == 0)
             return false;
-        if (type == InputType.In && connection.output == null)
-            return false;
-        if (type == InputType.Out && connection.input == null)
+        others = new List<Node>();
+        if (type == InputType.In && connections[0].output == null)
             return false;
 
-        other = type == InputType.In ? connection.output.parent : connection.input.parent;
+        if (type == InputType.Out && connections[0].input == null)
+            return false;
+
+
+        foreach (NodeConnection connection in connections) {
+            others.Add(type == InputType.In ? connection.output.parent : connection.input.parent);
+        }
         return true;
     }
 }

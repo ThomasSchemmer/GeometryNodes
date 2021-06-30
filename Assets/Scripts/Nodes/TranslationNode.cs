@@ -19,22 +19,26 @@ public class TranslationNode : Node {
 
     public override bool Execute(out List<Node> enables) {
         enables = new List<Node>();
+        if (!inputs[0].TryGetOtherNodes(out List<Node> others))
+            return false;
+        bool othersExec = true;
+        foreach (Node other in others) {
+            othersExec &= other.isExecuted;
+        }
+        if (!othersExec)
+            return false;
         if (isExecuted)
             return true;
-        if (!this.inputs[0].TryGetOtherNode(out Node other))
-            return false;
 
-        if (!other.isExecuted || !(other.result is Geometry))
-            return false;
-
-        Geometry geo = (Geometry)other.result;
+        Geometry geo = (Geometry)others[0].result;
         Matrix4x4 trs = Matrix4x4.TRS(offset, Quaternion.Euler(rotation), scale);
         for(int i = 0; i < geo.vertices.Count; i++) {
             geo.vertices[i] = trs.MultiplyPoint(geo.vertices[i]);
         }
         foreach (NodeInput output in outputs) {
-            if (output.TryGetOtherNode(out Node node))
-                enables.Add(node);
+            if (output.TryGetOtherNodes(out List<Node> nodes)) {
+                enables.AddRange(nodes);
+            }
         }
         result = geo;
         isExecuted = true;
@@ -46,6 +50,9 @@ public class TranslationNode : Node {
         GUI.Box(rect, "", Styles.boxStyle);
         rect.height = 30;
         GUI.Label(rect, "" + Enum.GetName(typeof(Type), type), Styles.boxStyle);
+        Rect iRect = new Rect(rect.x + rect.width - 25, rect.y + 4, 20, 20);
+        if (isHovered)
+            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
 
         rect.height = 20;
         rect.width -= 40;
