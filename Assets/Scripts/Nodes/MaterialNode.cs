@@ -22,9 +22,6 @@ public class MaterialNode : Node {
         GUI.Box(rect, "", Styles.boxStyle);
         rect.height = 30;
         GUI.Label(rect, "" + Enum.GetName(typeof(Type), type), Styles.boxStyle);
-        Rect iRect = new Rect(rect.x + rect.width - 25, rect.y + 4, 20, 20);
-        if (isHovered)
-            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
         rect.height = 20;
 
         rect.y += 35;
@@ -35,6 +32,10 @@ public class MaterialNode : Node {
 
         target = (Material)EditorGUI.ObjectField(rect, target, typeof(Material), true);
 
+        Rect temp = NodeEditorWindow.GetOffset(original);
+        Rect iRect = new Rect(temp.x + temp.width - 25, temp.y + 4, 20, 20);
+        if (isHovered)
+            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
         DrawInputs();
     }
 
@@ -55,10 +56,12 @@ public class MaterialNode : Node {
         if (!(result is Geometry))
             return false;
 
-        if (target == null)
-            return false;
-
-        this.result = new MaterialGeometry(target, (Geometry)result);
+        if (target == null) {
+            Material mat = new Material(Shader.Find("Standard"));
+            this.result = new MaterialGeometry(mat, (Geometry)result);
+        } else {
+            this.result = new MaterialGeometry(target, (Geometry)result);
+        }
 
         enables = new List<Node>();
         foreach (NodeInput output in outputs) {

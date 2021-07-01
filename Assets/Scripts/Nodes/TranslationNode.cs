@@ -50,9 +50,6 @@ public class TranslationNode : Node {
         GUI.Box(rect, "", Styles.boxStyle);
         rect.height = 30;
         GUI.Label(rect, "" + Enum.GetName(typeof(Type), type), Styles.boxStyle);
-        Rect iRect = new Rect(rect.x + rect.width - 25, rect.y + 4, 20, 20);
-        if (isHovered)
-            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
 
         rect.height = 20;
         rect.width -= 40;
@@ -61,6 +58,11 @@ public class TranslationNode : Node {
         DrawVector(ref rect, "Translation:", ref offset);
         DrawVector(ref rect, "Scale:", ref scale);
         DrawVector(ref rect, "Rotation:", ref rotation);
+
+        Rect temp = NodeEditorWindow.GetOffset(original);
+        Rect iRect = new Rect(temp.x + temp.width - 25, temp.y + 4, 20, 20);
+        if (isHovered)
+            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
 
         DrawInputs();
     }

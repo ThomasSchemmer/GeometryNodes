@@ -18,12 +18,10 @@ public class GeometryNode : Node {
 
     public override bool Execute(out List<Node> enables) {
         switch (geometryType) {
-            case Geometry.Type.Cube:
-                result = Geometry.Create(Geometry.Type.Cube); break;
-            case Geometry.Type.Plane:
-                result = Geometry.Create(Geometry.Type.Plane); break;
             case Geometry.Type.Custom:
                 result = CreateResultFromTarget(); break;
+            default:
+                result = Geometry.CreatePrimitive(geometryType); break;
         }
         enables = new List<Node>();
         foreach(NodeInput output in outputs) {
@@ -53,9 +51,6 @@ public class GeometryNode : Node {
         GUI.Box(rect, "", Styles.boxStyle);
         rect.height = 30;
         GUI.Label(rect, "" + Enum.GetName(typeof(Type), type), Styles.boxStyle);
-        Rect iRect = new Rect(rect.x + rect.width - 25, rect.y + 4, 20, 20);
-        if(isHovered)
-            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
 
         rect.height = 20;
         rect.y += 23;
@@ -80,6 +75,11 @@ public class GeometryNode : Node {
         } else {
             original.height = 65;
         }
+
+        Rect temp = NodeEditorWindow.GetOffset(original);
+        Rect iRect = new Rect(temp.x + temp.width - 25, temp.y + 4, 20, 20);
+        if (isHovered)
+            EditorGUI.LabelField(iRect, EditorGUIUtility.IconContent("CollabDeleted Icon"));
 
         DrawInputs();
     }

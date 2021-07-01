@@ -135,10 +135,12 @@ public class NodeEditorWindow : EditorWindow {
 
     private bool HandleContextMenu(Event e) {
         GenericMenu genMenu = new GenericMenu();
-        genMenu.AddItem(new GUIContent("Add GeometryNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.GEOMETRY));
-        genMenu.AddItem(new GUIContent("Add OutputNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.OUTPUT));
-        genMenu.AddItem(new GUIContent("Add TranslationNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.TRANSLATION));
-        genMenu.AddItem(new GUIContent("Add MaterialNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.MATERIAL));
+        genMenu.AddItem(new GUIContent("Add.."), false, null);
+        genMenu.AddItem(new GUIContent("GeometryNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.GEOMETRY));
+        genMenu.AddItem(new GUIContent("OutputNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.OUTPUT));
+        genMenu.AddItem(new GUIContent("TranslationNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.TRANSLATION));
+        genMenu.AddItem(new GUIContent("MaterialNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.MATERIAL));
+        genMenu.AddItem(new GUIContent("InstanceNode"), false, () => OnClickAddNode(e.mousePosition, Node.Type.INSTANCE));
 
         genMenu.ShowAsContext();
         return true;
@@ -157,6 +159,8 @@ public class NodeEditorWindow : EditorWindow {
                 n = new TranslationNode(mousePosition); break;
             case Node.Type.MATERIAL:
                 n = new MaterialNode(mousePosition); break;
+            case Node.Type.INSTANCE:
+                n = new InstanceNode(mousePosition); break;
             default:
                 Debug.LogError("Invalid Node Type!");
                 return;
@@ -260,6 +264,8 @@ public class NodeEditorWindow : EditorWindow {
                 nodes.Add(new TranslationNode(pos)); break;
             case Node.Type.MATERIAL:
                 nodes.Add(new MaterialNode(pos)); break;
+            case Node.Type.INSTANCE:
+                nodes.Add(new InstanceNode(pos)); break;
         }
     }
 

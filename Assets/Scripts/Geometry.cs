@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Geometry : Result
 {
-    public enum Type { Cube, Plane, Custom}
+    public enum Type { Sphere, Capsule, Cyinder, Cube, Plane, Quad, Custom}
 
     public List<Vector3> vertices;
     public List<int> triangles;
@@ -19,18 +19,17 @@ public class Geometry : Result
         this.triangles = new List<int>(triangles);
     }
 
-    public static Geometry Create(Type type) {
-        switch (type) {
-            case Type.Plane:
-                return CreatePlane();
-            case Type.Cube:
-                return CreateCube();
-            default:
-                return CreateEmpty();
-        }
+    public static Geometry CreatePrimitive(Type type) {
+        if (type == Type.Custom)
+            return CreateEmpty();
 
-        
+        GameObject obj = GameObject.CreatePrimitive((PrimitiveType)type);
+        Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
+        Geometry geo = new Geometry(mesh.vertices, mesh.triangles);
+        GameObject.DestroyImmediate(obj);
+        return geo;
     }
+
 
     public static Geometry CreateEmpty() {
         return new Geometry(new List<Vector3>(), new List<int>());

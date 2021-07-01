@@ -6,7 +6,7 @@ using System;
 
 public abstract class Node
 {
-    public enum Type { NONE, GEOMETRY, OUTPUT, TRANSLATION, MATERIAL}
+    public enum Type { NONE, GEOMETRY, OUTPUT, TRANSLATION, MATERIAL, INSTANCE}
 
     public Rect original, rect;
     public string title;
